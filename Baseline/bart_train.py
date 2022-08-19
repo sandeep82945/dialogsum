@@ -4,7 +4,7 @@ from transformers import AutoModelForSeq2SeqLM, DataCollatorForSeq2Seq, Seq2SeqT
 from transformers import AutoTokenizer
 import os
 
-os.environ['CUDA_VISIBLE_DEVICES']="6,7"
+os.environ['CUDA_VISIBLE_DEVICES']="0"
 
 model_checkpoint = "facebook/bart-large"
 metric = load_metric("rouge.py")
@@ -62,7 +62,7 @@ def preprocess_function(examples):
 
 tokenized_datasets = raw_datasets.map(preprocess_function, batched=True)
 
-batch_size = 16
+batch_size = 2
 args = Seq2SeqTrainingArguments(
     "BART-LARGE-DIALOGSUM",
     evaluation_strategy = "epoch",
@@ -110,8 +110,24 @@ def compute_metrics(eval_pred):
     return {k: round(v, 4) for k, v in result.items()}
 
 
+class CustomTrainer(Seq2SeqTrainer):
+    def __init__(self, *args,**kwargs):
+      super().__init__(*args,**kwargs)
 
-trainer = Seq2SeqTrainer(
+    # def compute_loss(self, model, inputs, return_outputs=False):
+    #     print("compute loss called")
+
+    #     labels = inputs.get("labels")
+    #     # forward pass
+    #     output1,output2,ouput3 = model(**inputs)
+    #     logits = outputs.get("logits")
+    #     # compute custom loss (suppose one has 3 labels with different weights)
+    #     loss_fct = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0, 3.0]))
+    #     loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+    #     return (loss, outputs) if return_outputs else loss
+
+
+trainer = CustomTrainer(
     model,
     args,
     train_dataset=tokenized_datasets["train"],
